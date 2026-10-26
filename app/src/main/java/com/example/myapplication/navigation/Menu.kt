@@ -17,10 +17,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -38,7 +38,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.myapplication.auth.AuthManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +54,9 @@ fun Menu(
         rotaAtual.contains("Transacoes") -> "Transações"
         rotaAtual.contains("Categorias") -> "Resumo por categoria"
         rotaAtual.contains("NovaTransacao") -> "Nova transação"
+        rotaAtual.contains("EditarTransacao") -> "Editar transação"
         rotaAtual.contains("DetalheTransacao") -> "Detalhes"
+        rotaAtual.contains("Perfil") -> "Minha conta"
         else -> ""
     }
 
@@ -75,15 +76,10 @@ fun Menu(
         },
         actions = {
             if (rotaAtual.contains("Dashboard")) {
-                IconButton(onClick = {
-                    AuthManager.sair()
-                    navController.navigate(Login) {
-                        popUpTo(Dashboard) { inclusive = true }
-                    }
-                }) {
+                IconButton(onClick = { navController.navigate(Perfil) }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = "Sair"
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Minha conta"
                     )
                 }
             }

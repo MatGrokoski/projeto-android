@@ -1,6 +1,5 @@
 package com.example.myapplication.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +18,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,38 +26,43 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.auth.AuthManager
 import com.example.myapplication.ui.components.CartaoPadrao
 import com.example.myapplication.ui.components.MensagemErro
 import com.example.myapplication.ui.components.coresCampos
-import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.ui.viewmodel.AuthViewModel
 
 @Composable
 fun CadastroScreen(
+    authViewModel: AuthViewModel,
     irLogin: () -> Unit
 ) {
     var nome by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var senhaVisivel by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     val nomeInvalido = nome.isNotEmpty() && nome.trim().length < 3
     val emailInvalido = email.isNotEmpty() && !email.contains("@")
     val senhaInvalida = senha.isNotEmpty() && senha.length < 6
     val formularioValido = nome.trim().length >= 3 && email.contains("@") && senha.length >= 6
+
+    LaunchedEffect(authViewModel.concluido) {
+        if (authViewModel.concluido) {
+            authViewModel.consumirResultado()
+            irLogin()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -96,6 +101,7 @@ fun CadastroScreen(
                     isError = nomeInvalido,
                     shape = RoundedCornerShape(14.dp),
                     colors = coresCampos(),
+                    enabled = !authViewModel.carregando,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (nomeInvalido) {
@@ -112,6 +118,7 @@ fun CadastroScreen(
                     isError = emailInvalido,
                     shape = RoundedCornerShape(14.dp),
                     colors = coresCampos(),
+                    enabled = !authViewModel.carregando,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (emailInvalido) {
@@ -128,11 +135,8 @@ fun CadastroScreen(
                     else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     trailingIcon = {
-                        val image = if (senhaVisivel)
-                            Icons.Default.Visibility
-                        else Icons.Default.VisibilityOff
-                        val descricao = if (senhaVisivel) "Esconder senha"
-                        else "Mostrar senha"
+                        val image = if (senhaVisivel) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                        val descricao = if (senhaVisivel) "Esconder senha" else "Mostrar senha"
                         IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
                             Icon(imageVector = image, contentDescription = descricao)
                         }
@@ -141,36 +145,30 @@ fun CadastroScreen(
                     isError = senhaInvalida,
                     shape = RoundedCornerShape(14.dp),
                     colors = coresCampos(),
+                    enabled = !authViewModel.carregando,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (senhaInvalida) {
                     MensagemErro("A senha deve ter pelo menos 6 caracteres.")
                 }
 
+                authViewModel.mensagem?.let { MensagemErro(it) }
+
                 Spacer(Modifier.height(4.dp))
 
-                Button(
-                    onClick = {
-                        if (AuthManager.cadastrar(nome, email, senha)) {
-                            Toast.makeText(
-                                context, "Cadastro realizado com sucesso!",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            irLogin()
-                        } else {
-                            Toast.makeText(
-                                context, "Este e-mail já está cadastrado!",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    enabled = formularioValido,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) {
-                    Text("Criar conta")
+                if (authViewModel.carregando) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                } else {
+                    Button(
+                        onClick = { authViewModel.cadastrar(nome, email, senha) },
+                        enabled = formularioValido,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                    ) {
+                        Text("Criar conta")
+                    }
                 }
             }
         }
@@ -183,13 +181,5 @@ fun CadastroScreen(
         ) {
             Text("Já tem uma conta? Entrar")
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CadastroScreenPreview() {
-    MyApplicationTheme {
-        CadastroScreen(irLogin = {})
     }
 }

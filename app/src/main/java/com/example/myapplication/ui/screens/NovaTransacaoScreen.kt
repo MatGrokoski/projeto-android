@@ -1,6 +1,5 @@
 package com.example.myapplication.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,10 +45,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.TransacaoManager
 import com.example.myapplication.ui.components.CartaoPadrao
@@ -55,9 +54,9 @@ import com.example.myapplication.ui.components.MensagemErro
 import com.example.myapplication.ui.components.coresCampos
 import com.example.myapplication.ui.components.dataDeHoje
 import com.example.myapplication.ui.components.iconeDaCategoria
-import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.corDespesa
 import com.example.myapplication.ui.theme.corReceita
+import com.example.myapplication.ui.viewmodel.TransacaoViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -66,6 +65,7 @@ import java.util.TimeZone
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NovaTransacaoScreen(
+    viewModel: TransacaoViewModel,
     voltar: () -> Unit
 ) {
     var tipoSelecionado by remember { mutableStateOf(TransacaoManager.DESPESA) }
@@ -75,7 +75,6 @@ fun NovaTransacaoScreen(
     var categoriaSelecionada by remember { mutableStateOf(TransacaoManager.categoriasDespesa.first()) }
     var dataSelecionada by remember { mutableStateOf(dataDeHoje()) }
     var mostrarCalendario by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     val categorias = if (tipoSelecionado == TransacaoManager.DESPESA)
         TransacaoManager.categoriasDespesa
@@ -87,6 +86,13 @@ fun NovaTransacaoScreen(
     val formularioValido = valorConvertido != null && valorConvertido > 0.0 && descricao.trim().length >= 3
 
     val corDoTipo = if (tipoSelecionado == TransacaoManager.DESPESA) corDespesa() else corReceita()
+
+    LaunchedEffect(viewModel.salvo) {
+        if (viewModel.salvo) {
+            viewModel.consumirSalvo()
+            voltar()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -158,6 +164,7 @@ fun NovaTransacaoScreen(
                         isError = valorInvalido,
                         shape = RoundedCornerShape(14.dp),
                         colors = coresCampos(),
+                        enabled = !viewModel.carregando,
                         modifier = Modifier.width(180.dp)
                     )
                 }
@@ -179,6 +186,7 @@ fun NovaTransacaoScreen(
                 isError = descricaoInvalida,
                 shape = RoundedCornerShape(14.dp),
                 colors = coresCampos(),
+                enabled = !viewModel.carregando,
                 modifier = Modifier.fillMaxWidth()
             )
             if (descricaoInvalida) {
@@ -259,27 +267,31 @@ fun NovaTransacaoScreen(
             }
         }
 
+        viewModel.mensagem?.let { MensagemErro(it) }
+
         Spacer(Modifier.height(8.dp))
 
-        Button(
-            onClick = {
-                TransacaoManager.adicionar(
-                    descricao = descricao,
-                    categoria = categoriaSelecionada,
-                    data = dataSelecionada,
-                    valor = valorConvertido ?: 0.0,
-                    tipo = tipoSelecionado
-                )
-                Toast.makeText(context, "Transação salva!", Toast.LENGTH_SHORT).show()
-                voltar()
-            },
-            enabled = formularioValido,
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-        ) {
-            Text("Salvar transação")
+        if (viewModel.carregando) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            Button(
+                onClick = {
+                    viewModel.adicionar(
+                        descricao = descricao,
+                        categoria = categoriaSelecionada,
+                        data = dataSelecionada,
+                        valor = valorConvertido ?: 0.0,
+                        tipo = tipoSelecionado
+                    )
+                },
+                enabled = formularioValido,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp)
+            ) {
+                Text("Salvar transação")
+            }
         }
     }
 }
@@ -314,13 +326,5 @@ private fun OpcaoTipo(
                 color = if (selecionado) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun NovaTransacaoScreenPreview() {
-    MyApplicationTheme {
-        NovaTransacaoScreen(voltar = {})
     }
 }

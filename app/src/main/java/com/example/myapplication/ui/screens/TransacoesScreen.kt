@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,20 +17,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.TransacaoManager
 import com.example.myapplication.ui.components.CartaoPadrao
 import com.example.myapplication.ui.components.ChipFiltro
 import com.example.myapplication.ui.components.LinhaTransacao
 import com.example.myapplication.ui.components.rotuloData
-import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.ui.viewmodel.TransacaoViewModel
 
 @Composable
 fun TransacoesScreen(
-    irParaDetalhes: (Int) -> Unit
+    viewModel: TransacaoViewModel,
+    irParaDetalhes: (Long) -> Unit
 ) {
-    val todasTransacoes = TransacaoManager.listar()
+    val todasTransacoes = viewModel.transacoes
     var filtroSelecionado by remember { mutableStateOf("todas") }
 
     val transacoesFiltradas = when (filtroSelecionado) {
@@ -62,9 +63,11 @@ fun TransacoesScreen(
             )
         }
 
-        if (transacoesFiltradas.isEmpty()) {
+        if (viewModel.carregando) {
+            CircularProgressIndicator(modifier = Modifier.padding(20.dp))
+        } else if (transacoesFiltradas.isEmpty()) {
             Text(
-                text = "Nenhuma transação encontrada para esse filtro.",
+                text = "Nenhuma transação encontrada.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(20.dp)
@@ -98,13 +101,5 @@ fun TransacoesScreen(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TransacoesScreenPreview() {
-    MyApplicationTheme {
-        TransacoesScreen(irParaDetalhes = {})
     }
 }

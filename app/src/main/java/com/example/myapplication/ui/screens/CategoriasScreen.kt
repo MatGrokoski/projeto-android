@@ -24,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.TransacaoManager
 import com.example.myapplication.ui.components.CardIndicador
@@ -34,9 +33,9 @@ import com.example.myapplication.ui.components.IconeCategoria
 import com.example.myapplication.ui.components.RotuloSecao
 import com.example.myapplication.ui.components.emReais
 import com.example.myapplication.ui.components.emReaisSemCentavos
-import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.corDespesa
 import com.example.myapplication.ui.theme.corReceita
+import com.example.myapplication.ui.viewmodel.TransacaoViewModel
 
 data class ResumoCategoria(
     val categoria: String,
@@ -44,10 +43,10 @@ data class ResumoCategoria(
 )
 
 @Composable
-fun CategoriasScreen() {
+fun CategoriasScreen(viewModel: TransacaoViewModel) {
     var tipoSelecionado by remember { mutableStateOf(TransacaoManager.DESPESA) }
 
-    val transacoesDoTipo = TransacaoManager.listar().filter { it.tipo == tipoSelecionado }
+    val transacoesDoTipo = viewModel.transacoes.filter { it.tipo == tipoSelecionado }
 
     val totaisPorCategoria = transacoesDoTipo
         .groupBy { it.categoria }
@@ -206,13 +205,5 @@ fun CategoriasScreen() {
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CategoriasScreenPreview() {
-    MyApplicationTheme {
-        CategoriasScreen()
     }
 }

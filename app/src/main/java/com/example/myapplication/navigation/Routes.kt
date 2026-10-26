@@ -21,4 +21,10 @@ data object Categorias
 data object NovaTransacao
 
 @Serializable
-data class DetalheTransacao(val id: Int)
+data class DetalheTransacao(val id: Long)
+
+@Serializable
+data class EditarTransacao(val id: Long)
+
+@Serializable
+data object Perfil

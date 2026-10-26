@@ -30,27 +30,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.auth.AuthManager
-import com.example.myapplication.data.TransacaoManager
+import com.example.myapplication.auth.SessaoUsuario
 import com.example.myapplication.ui.components.CartaoPadrao
 import com.example.myapplication.ui.components.LinhaTransacao
 import com.example.myapplication.ui.components.TituloSecao
 import com.example.myapplication.ui.components.emReais
-import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.ui.viewmodel.TransacaoViewModel
 
 @Composable
 fun DashboardScreen(
+    viewModel: TransacaoViewModel,
     irParaTransacoes: () -> Unit,
-    irParaDetalhes: (Int) -> Unit
+    irParaDetalhes: (Long) -> Unit
 ) {
-    val ultimasTransacoes = TransacaoManager.listar().take(4)
-    val receitas = TransacaoManager.totalReceitas()
-    val despesas = TransacaoManager.totalDespesas()
-    val saldo = TransacaoManager.saldo()
+    val ultimasTransacoes = viewModel.transacoes.take(4)
+    val receitas = viewModel.totalReceitas
+    val despesas = viewModel.totalDespesas
+    val saldo = viewModel.saldo
 
-    val nome = AuthManager.usuarioLogado?.nome?.split(" ")?.firstOrNull() ?: ""
+    val nome = SessaoUsuario.usuarioNome.split(" ").firstOrNull() ?: ""
     val saudacao = if (nome.isNotEmpty()) "Olá, $nome" else "Olá"
 
     val proporcaoGasta = if (receitas > 0) (despesas / receitas).toFloat().coerceIn(0f, 1f) else 0f
@@ -159,7 +158,8 @@ fun DashboardScreen(
                 )
             } else {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    ultimasTransacoes.forEachIndexed { indice, transacao ->
+                    var indice = 0
+                    for (transacao in ultimasTransacoes) {
                         LinhaTransacao(
                             transacao = transacao,
                             onClick = { irParaDetalhes(transacao.id) }
@@ -170,6 +170,7 @@ fun DashboardScreen(
                                 modifier = Modifier.padding(start = 74.dp, end = 16.dp)
                             )
                         }
+                        indice++
                     }
                 }
             }
@@ -219,13 +220,5 @@ private fun ResumoNoSaldo(
                 maxLines = 1
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DashboardScreenPreview() {
-    MyApplicationTheme {
-        DashboardScreen(irParaTransacoes = {}, irParaDetalhes = {})
     }
 }
