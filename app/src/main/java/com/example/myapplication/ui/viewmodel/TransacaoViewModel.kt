@@ -65,20 +65,23 @@ class TransacaoViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun listar() = executar {
-        val lista = withContext(Dispatchers.IO) { dao.listar() }
+        val uid = SessaoUsuario.exigirUsuario()
+        val lista = withContext(Dispatchers.IO) { dao.listar(uid) }
         transacoes = lista
     }
 
     fun buscarPorId(id: Long) = executar {
-        val encontrado = withContext(Dispatchers.IO) { dao.buscarPorId(id) }
+        val uid = SessaoUsuario.exigirUsuario()
+        val encontrado = withContext(Dispatchers.IO) { dao.buscarPorId(id, uid) }
         transacao = requireNotNull(encontrado) { "Transação não encontrada." }
     }
 
     fun adicionar(descricao: String, categoria: String, data: String, valor: Double, tipo: String) = executar {
         require(descricao.trim().length >= 3) { "A descrição deve ter pelo menos 3 caracteres." }
         require(valor > 0) { "Informe um valor maior que zero." }
+        val uid = SessaoUsuario.exigirUsuario()
         withContext(Dispatchers.IO) {
-            dao.inserir(descricao.trim(), categoria, data, valor, tipo)
+            dao.inserir(uid, descricao.trim(), categoria, data, valor, tipo)
         }
         salvo = true
     }
@@ -86,14 +89,16 @@ class TransacaoViewModel(application: Application) : AndroidViewModel(applicatio
     fun alterar(id: Long, descricao: String, categoria: String, data: String, valor: Double, tipo: String) = executar {
         require(descricao.trim().length >= 3) { "A descrição deve ter pelo menos 3 caracteres." }
         require(valor > 0) { "Informe um valor maior que zero." }
+        val uid = SessaoUsuario.exigirUsuario()
         withContext(Dispatchers.IO) {
-            dao.alterar(id, descricao.trim(), categoria, data, valor, tipo)
+            dao.alterar(id, uid, descricao.trim(), categoria, data, valor, tipo)
         }
         salvo = true
     }
 
     fun excluir(id: Long) = executar {
-        withContext(Dispatchers.IO) { dao.excluir(id) }
+        val uid = SessaoUsuario.exigirUsuario()
+        withContext(Dispatchers.IO) { dao.excluir(id, uid) }
         transacoes = transacoes.filterNot { it.id == id }
         excluida = true
     }

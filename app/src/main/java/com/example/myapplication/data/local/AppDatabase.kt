@@ -9,7 +9,7 @@ internal class AppDatabase(context: Context) : SQLiteOpenHelper(
     context.applicationContext,
     File(context.noBackupFilesDir, "meubolso_sqlite.db").absolutePath,
     null,
-    2
+    3
 ) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -27,6 +27,7 @@ internal class AppDatabase(context: Context) : SQLiteOpenHelper(
             """
             CREATE TABLE transacoes(
             id INTEGER PRIMARY KEY,
+            usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
             descricao TEXT NOT NULL,
             categoria TEXT NOT NULL,
             data TEXT NOT NULL,

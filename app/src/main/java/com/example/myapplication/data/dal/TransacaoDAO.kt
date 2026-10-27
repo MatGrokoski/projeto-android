@@ -8,9 +8,10 @@ import com.example.myapplication.model.Transacao
 internal class TransacaoDAO(context: Context) {
     private val appContext = context.applicationContext
 
-    fun inserir(descricao: String, categoria: String, data: String, valor: Double, tipo: String): Long {
+    fun inserir(usuarioId: Long, descricao: String, categoria: String, data: String, valor: Double, tipo: String): Long {
         return AppDatabase(appContext).use { db ->
             val dados = ContentValues().apply {
+                put("usuario_id", usuarioId)
                 put("descricao", descricao)
                 put("categoria", categoria)
                 put("data", data)
@@ -21,11 +22,12 @@ internal class TransacaoDAO(context: Context) {
         }
     }
 
-    fun listar(): List<Transacao> = AppDatabase(appContext).use { db ->
+    fun listar(usuarioId: Long): List<Transacao> = AppDatabase(appContext).use { db ->
         db.readableDatabase.query(
             "transacoes",
             arrayOf("id", "descricao", "categoria", "data", "valor", "tipo"),
-            null, null, null, null,
+            "usuario_id = ?", arrayOf(usuarioId.toString()),
+            null, null,
             "data DESC, id DESC"
         ).use { cursor ->
             buildList {
@@ -45,11 +47,11 @@ internal class TransacaoDAO(context: Context) {
         }
     }
 
-    fun buscarPorId(id: Long): Transacao? = AppDatabase(appContext).use { db ->
+    fun buscarPorId(id: Long, usuarioId: Long): Transacao? = AppDatabase(appContext).use { db ->
         db.readableDatabase.query(
             "transacoes",
             arrayOf("id", "descricao", "categoria", "data", "valor", "tipo"),
-            "id = ?", arrayOf(id.toString()),
+            "id = ? AND usuario_id = ?", arrayOf(id.toString(), usuarioId.toString()),
             null, null, null
         ).use { cursor ->
             if (cursor.moveToFirst()) Transacao(
@@ -64,7 +66,7 @@ internal class TransacaoDAO(context: Context) {
         }
     }
 
-    fun alterar(id: Long, descricao: String, categoria: String, data: String, valor: Double, tipo: String) {
+    fun alterar(id: Long, usuarioId: Long, descricao: String, categoria: String, data: String, valor: Double, tipo: String) {
         AppDatabase(appContext).use { db ->
             val valores = ContentValues().apply {
                 put("descricao", descricao)
@@ -74,16 +76,16 @@ internal class TransacaoDAO(context: Context) {
                 put("tipo", tipo)
             }
             val alterado = db.writableDatabase.update(
-                "transacoes", valores, "id = ?", arrayOf(id.toString())
+                "transacoes", valores, "id = ? AND usuario_id = ?", arrayOf(id.toString(), usuarioId.toString())
             )
             require(alterado == 1) { "Transação não encontrada." }
         }
     }
 
-    fun excluir(id: Long) {
+    fun excluir(id: Long, usuarioId: Long) {
         AppDatabase(appContext).use { db ->
             val excluido = db.writableDatabase.delete(
-                "transacoes", "id = ?", arrayOf(id.toString())
+                "transacoes", "id = ? AND usuario_id = ?", arrayOf(id.toString(), usuarioId.toString())
             )
             require(excluido == 1) { "Transação não encontrada." }
         }
